@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
-#include "../include/minishell.h"
 
 char    *get_line()
 {
@@ -25,7 +24,7 @@ char    *get_line()
 
 void    sig_handler(int signum)
 {
-    if (signum == SIGINT)
+    if (signum == SIGINT || signum == SIGTERM)
     {
         printf("\n");
         rl_on_new_line();
@@ -38,8 +37,14 @@ int main(void)
 {
     char    *line;
 
-    signal(SIGINT, sig_handler);
-    line = get_line();
-    printf("%s\n", line);
+	signal(SIGQUIT, sig_handler);
+	signal(SIGINT, sig_handler);
+    while (1)
+	{
+		line = get_line();
+		if (*line)
+			printf("%s\n", line);
+	}
+	return (0);
 }
 

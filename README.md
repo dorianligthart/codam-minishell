@@ -3,6 +3,7 @@
 This project replicates bash:
 - Strictly right to left order of handling piping. so `pwd | cat -e | echo "hi"`
   will first start the `echo` program, then `cat` which will read from stdin and write to stdout, then `pwd`.
+- Crossover of bash and C. if statements need "(<expression>)", CMD + ',' + ... + ';'. inside these expressions you can use: ["==", "!=", "<", "<=", ">", ">=", "&&", "||"].
 
 ### list of used external functions:
 ```c
@@ -86,3 +87,28 @@ void    perror(const char *s);
 char    *strerror(int errnum);
 ```
 
+### disallowed filename characters in Linux:
+- \# pound
+- \% percent
+- \& ampersand
+- \{ left curly bracket
+- \} right curly bracket
+- \\ back slash
+- \< left angle bracket
+- \> right angle bracket
+- \* asterisk
+- \? question mark
+- \/ forward slash
+- \  blank spaces
+- \$ dollar sign
+- \! exclamation point
+- \' single quotes
+- \" double quotes
+- \: colon
+- \@ at sign
+- \+ plus sign
+- \` backtick
+- \| pipe
+- \= equal sign
+- \emojis
+- \alt codes
