@@ -1,11 +1,10 @@
 # codam-minishell
 [subject.pdf](https://cdn.intra.42.fr/pdf/pdf/47172/en.subject.pdf)
-This project replicates bash:
-- Strictly right to left order of handling piping. so `pwd | cat -e | echo "hi"`
-  will first start the `echo` program, then `cat` which will read from stdin and write to stdout, then `pwd`.
-- Crossover of bash and C. if statements need "(<expression>)", CMD + ',' + ... + ';'. inside these expressions you can use: ["==", "!=", "<", "<=", ">", ">=", "&&", "||"].
 
-### list of used external functions:
+### note:
+This project is simplified bash in interactive mode. It does not make use of a parse tree, it simply converts input into tokens, then handles the environment variables, heredoc, pipes, redirects, commands. 
+
+### list of allowed external functions:
 ```c
 char    *readline (const char *prompt); 
 void    rl_on_new_line(void);
@@ -112,3 +111,13 @@ char    *strerror(int errnum);
 - \= equal sign
 - \emojis
 - \alt codes
+
+### this shell compared to bash:
+- no program options (bash has many)
+- no &, &&, ||, ${}, $(), (), *, `, !, !!, ;, \\, =(arrays).
+- no keywords like 'if'.
+- no arithmatic operations like +, -, *, %, **, ++, --.
+- limited builtin commands, this shell has: [echo [-n], cd, pwd, export, unset,
+  env, exit]
+- supports: [<, >, <<, >>, "$...", $?, $$, |]
+- alters behaviour of [SIGINT, SIGQUIT]
