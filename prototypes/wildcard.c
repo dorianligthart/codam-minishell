@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -29,7 +30,7 @@ bool	isMatch(char *t, char *p)
             j++;
         }
       
-        else if (startIndex != -1) {
+        else if (startIndex != SIZE_MAX) {
             // No match, but a previous wildcard was found.
             // Backtrack to the last '*' character position
             // and try for a different match.

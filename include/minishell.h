@@ -2,6 +2,10 @@
 # define MINISHELL_H
 
 # include <stddef.h>
+# include <stdbool.h>
+
+//#include <stdio.h> //global pointer to environment variables.
+//extern char **environ;
 
 #if defined(STDIN) || defined(STDOUT) || defined(STDERR)
 #else
@@ -15,7 +19,8 @@ enum e_tokenid
 	NONE = 0,
 	CMD,			//seq of printable characters, including builtins!
 	STR,			//determined by quotes, after command, or after ASSIGN.
-	VAR,			//"$..." or just "..." before ASSIGN("...=").
+	VARNAME,		//"$..." or just "..." before ASSIGN("...=").
+	VARVALUE,		//
 	ASSIGN,			//"="
 	EXITCODE,		//"$?"
 	REDIRECT_IN,	//"<"
@@ -28,11 +33,12 @@ enum e_tokenid
 	CURLY_END,		//"}"
 	PAREN_START,	//"("
 	PAREN_END,		//")"
-	BLOCK_START,	//"["] = ""
+	BLOCK_START,	//"["
 	BLOCK_END,		//"]"
 	CMD_AND,		//"&&"
 	CMD_OR,			//"||"
 	WILDCARD,		//"*"
+	BACKGROUND,		//"&"
 };
 
 typedef struct t_token
@@ -42,13 +48,28 @@ typedef struct t_token
 	size_t	len;
 } t_token;
 
+////stuff i might need
+//enum e_astnodetypes
+//{
+//	AST_TYPE_COUNT,
+//}
+//typedef struct t_astcmd
+//{
+//	char		*str;
+//	size_t		length;
+//	t_astnode	*parent;
+//	t_astnode	*child;
+//} t_astcmd;
+//size_t	len_until_delims(char *str, const char *delims);
+
 typedef struct t_input
 {
-	char	*str;
-	size_t	len;
-	t_token	*tokens;
-	size_t	total;
-	size_t	current;
+	char		*str;
+	size_t		bufsize;
+	size_t		strlen;
+	t_token		*tokens;
+	size_t		total;
+	t_token		*parsed;
 } t_input;
 
 enum	e_builtins
@@ -63,32 +84,22 @@ enum	e_builtins
 	BI_TOTAL,
 };
 
-//const char	*builtins[BI_TOTAL] = {
-//	[BI_ECHO] = "echo",
-//	[BI_CD] = "cd",
-//	[BI_PWD] = "pwd",
-//	[BI_EXPORT] = "export",
-//	[BI_UNSET] = "unset",
-//	[BI_ENV] = "env",
-//	[BI_EXIT] = "exit",
-//};
+//main functions:
+char	*ms_read_stdin(void);
+bool	ms_tokenise(t_input *input);
+bool	ms_expand_envs(t_input *input);
+bool	ms_create_ast(t_input *input);
+bool	ms_exec(t_input *input, int argc, char **argv, char **envp);
+int 	bi_echo();
+int 	bi_cd();
+int 	bi_pwd();
+int 	bi_export();
+int 	bi_unset();
+int 	bi_env();
+int 	bi_exit();
 
-char			*ms_read_stdin(void);
-t_input			*ms_get_input(char *line);
+//AST functions:
 
-//runcmd:
-int	ms_runcmd(t_input *h);
-int run_cmd();
-int run_echo();
-int run_cd();
-int run_pwd();
-int run_export();
-int run_unset();
-int run_env();
-int run_exit();
-
-//returns the length until a delimiter in delims is reached or zero.
-size_t	len_until_delims(char *str, const char *delims);
 
 
 #endif

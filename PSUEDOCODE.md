@@ -4,16 +4,14 @@
 - if (newline in saved[fd]) return split();
 - else *line = saved[fd]; saved[fd] = NULL; return bytesread;
 
+### AST:
+1.  
+2.
+3.
+4.
+5.
+6. 
+
 ### main():
-```
-mstruct ms;
-ssize_t ret;
-while (1)
-{
-    ret = getline();
-    if (ret < 0) break;
-    ret = parse_line();
-    if (ret < 0) break;
-}
-return (cleaner_function(ret));
- ```
+
+

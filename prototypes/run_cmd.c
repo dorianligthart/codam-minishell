@@ -10,6 +10,8 @@ int	run_cmd(char *line, int *tokens)
 {
 	pid_t	pid;
 
+	(void)line;
+	(void)tokens;
 	pid = fork();
 	if (pid < 0)
 		return (pid);

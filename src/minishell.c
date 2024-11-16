@@ -5,52 +5,109 @@
 
 #include <signal.h>
 #include <sys/wait.h>
+#include <readline/history.h>
 #include "minishell.h"
 
-// checks if cmd is a builtin or whether it exists or not using access()
-int		check_cmd(void)
+#define EXITFAILURE 1
+#define EXITSUCCESS 0
+
+const char	*builtins[BI_TOTAL] = {
+	[BI_ECHO] = "echo",
+	[BI_CD] = "cd",
+	[BI_PWD] = "pwd",
+	[BI_EXPORT] = "export",
+	[BI_UNSET] = "unset",
+	[BI_ENV] = "env",
+	[BI_EXIT] = "exit",
+};
+
+const char	**path;
+
+#include "getline.h"
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+
+//reads whole lines and merges previous lines until the quote character or EOF.
+// TODO: performance boost: control the buffer to read on top of input_start.
+static ssize_t	ms_read_lines_until_quote(char **input, size_t *n, 
+										  size_t *i, int quotechar)
 {
+	char	*secquote;
+	ssize_t	ret;
+
+	return (0);
+	(*i)++;
+	secquote = strchr(*input + *i, quotechar);
+	while (secquote == NULL)
+	{
+		if (write (STDOUT_FILENO, "> ", 2) < 0)
+			return (-1);
+		ret = ft_readline(input, n, STDIN_FILENO);
+		if (ret < 0)
+			return (ret);
+		secquote = strchr(*input + *i, quotechar);
+		if (secquote == NULL)
+			*i += ret;
+	}
+	*i += secquote - (*input + *i);
 	return (0);
 }
 
+//returns one or more lines or NULL on malloc(3)/read(2) error.
+ssize_t	ms_checkstring(char **input, size_t *n)
+{	
+	ssize_t			ret;
+	size_t			i;
 
-ssize_t	get_cmd(t_input *t)
-{
-	(void)t;
-	return (0);
-}
-
-void	ms_exit(int exitcode)
-{
-	//printf("\nexiting...\n");
-	exit(exitcode);
+	i = 0;
+	while ((*input)[i] != '\0')
+	{
+		if (strchr("\"\'", (*input)[i]) != NULL)
+		{
+			ret = ms_read_lines_until_quote(input, n, &i, (*input)[i]);
+			if (ret < 0)
+				return (-1);
+		}
+		i++;
+	}
+	return ret;
 }
 
 //perror("couldn't write() to stdout")
 //perror("couldn't malloc() in ft_getline()")
 //perror("couldn't malloc() in tokenise()")
-//signal(SIGINT, exit);//put this in quotesread()
-int	main(void)
-{
-	//t_input	*input;
-	char			*input;
 
-    signal(SIGQUIT, ms_exit);
-    signal(SIGINT, ms_exit);
+    //signal(SIGQUIT, ms_exit);
+    //signal(SIGINT, ms_exit);
+	
+int	main(int argc, char *argv[], char *envp[])
+{
+	t_input		input;
+	ssize_t		ret;
+	
 	while (1)
 	{
 		if (write(STDOUT_FILENO, "minishell$ ", 11) != 11)
-			return (1);
-		input = ms_read_stdin();
-		if (input == NULL)
-			return (1);
-		//t = ms_get_tokens(input);
-		//if (t == NULL || t->tokens == NULL)
-		//	return (1);
-		//if (parse_tokens(t) < 0)
-		//	return (1);
-		free(input);
+			return (EXITFAILURE);
+		ret = ft_readline(&input.str, &input.bufsize, STDIN_FILENO);
+		//if (ret > 0)
+		//	ret = ms_checkquotes(&input.str, &input.bufsize, STDIN_FILENO)
+		if (ret < 0)
+			return (EXITFAILURE);
+		if (ret == 0)
+			return (free(input.str), EXITSUCCESS);
+		add_history(input.str);
+		if (ms_tokenise(&input) == false)
+			return (free(input.str), EXITFAILURE);
+		if (ms_expand_envs(&input) == false)
+			return (EXITFAILURE);
+		if (ms_create_ast(&input) == false)
+			return (free(input.str), EXITFAILURE);
+		if (ms_exec(&input, argc, argv, envp) == false)
+			return (free(input.str), EXITFAILURE);
 	}
-	return (0);
+	free(input.str);
+	return (EXITSUCCESS);
 }
 
