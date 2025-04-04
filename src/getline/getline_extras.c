@@ -22,7 +22,7 @@ char	*ft_get_next_line(int fd)
 
 	line = NULL;
 	n = 0;
-	if (ft_getline(&line, &n, fd) < 0)
+	if (ft_getdelim(&line, &n, '\n', fd) < 0)
 		return (NULL);
 	return (line);
 }

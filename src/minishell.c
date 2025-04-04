@@ -1,113 +1,87 @@
+//standard:
+#include <unistd.h>
+#include <stdbool.h> //true false bool
+#include <stdlib.h> //malloc() free() strdup()
+#include <string.h> //memset()
+
+//TODO: rm and check potential bug. Mail: bug-readline@gnu.org:
+// readline/rltypedefs.h:71 typedef int rl_getc_func_t (FILE *);
+// Error: FILE is used but stdio.h not included
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
+#include <readline/history.h> //add_history()
 
-#include <signal.h>
-#include <sys/wait.h>
-#include <readline/history.h>
-#include "minishell.h"
+//local:
+#include "minishell.h" //t_shell, enum
+#include "envs.h" //ms_environ_init()
+#include "prompt.h" //ms_prompt_init()
+#include "lexer.h" //ms_lexer_init(), TOKEN enum
+#include "parser.h" //ms_parser_init()
+#include "exec.h" //ms_exec_init()
+#include "getline.h" //ft_getline()
+#include "utils.h" //ms_free()
 
-#define EXITFAILURE 1
-#define EXITSUCCESS 0
-
-const char	*builtins[BI_TOTAL] = {
-	[BI_ECHO] = "echo",
-	[BI_CD] = "cd",
-	[BI_PWD] = "pwd",
-	[BI_EXPORT] = "export",
-	[BI_UNSET] = "unset",
-	[BI_ENV] = "env",
-	[BI_EXIT] = "exit",
-};
-
-const char	**path;
-
-#include "getline.h"
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-
-//reads whole lines and merges previous lines until the quote character or EOF.
-// TODO: performance boost: control the buffer to read on top of input_start.
-static ssize_t	ms_read_lines_until_quote(char **input, size_t *n, 
-										  size_t *i, int quotechar)
+//TODO: do this in seperate process so user can type from start of program.
+//unlike bash ugh and wait for input at lexer.
+static inline bool	ms_initialise(t_shell *sh)
 {
-	char	*secquote;
-	ssize_t	ret;
+	const char	*str = "";
 
-	return (0);
-	(*i)++;
-	secquote = strchr(*input + *i, quotechar);
-	while (secquote == NULL)
-	{
-		if (write (STDOUT_FILENO, "> ", 2) < 0)
-			return (-1);
-		ret = ft_readline(input, n, STDIN_FILENO);
-		if (ret < 0)
-			return (ret);
-		secquote = strchr(*input + *i, quotechar);
-		if (secquote == NULL)
-			*i += ret;
-	}
-	*i += secquote - (*input + *i);
-	return (0);
+	sh->info.empty_string = str;
+	if (ms_env_init(&sh->exp_env, true) == false 
+		|| ms_lexer_init(&sh->lexer) == false
+		|| ms_parser_init(&sh->parser) == false)
+		return (false);
+	return (true);
 }
 
-//returns one or more lines or NULL on malloc(3)/read(2) error.
-ssize_t	ms_checkstring(char **input, size_t *n)
-{	
-	ssize_t			ret;
-	size_t			i;
-
-	i = 0;
-	while ((*input)[i] != '\0')
-	{
-		if (strchr("\"\'", (*input)[i]) != NULL)
-		{
-			ret = ms_read_lines_until_quote(input, n, &i, (*input)[i]);
-			if (ret < 0)
-				return (-1);
-		}
-		i++;
-	}
-	return ret;
+//expects a proper t_shell struct.
+bool	ms_exec(t_shell *sh)
+{
+	if (ms_lexer_go(&sh->lexer, sh->cmdstr) == false
+		|| ms_parser_go(&sh->parser, &sh->lexer) == false)
+		return (false);
+	add_history(sh->cmdstr);
+	if (ms_exec_go(sh) == false)
+		return (false);
+	return (true);
 }
 
-//perror("couldn't write() to stdout")
-//perror("couldn't malloc() in ft_getline()")
-//perror("couldn't malloc() in tokenise()")
+//challenges:
+// echo hello && ((echo hi; echo) < test.txt)
+// ((echo hi; cat) < test.txt) > cat
+// ((echo hi; cat) < test.txt) ; cat
+//Big differences!
 
-    //signal(SIGQUIT, ms_exit);
+//signal(SIGQUIT, ms_exit);
     //signal(SIGINT, ms_exit);
-	
-int	main(int argc, char *argv[], char *envp[])
+	//if (EOF CTRL+d) ms_exit();
+int	main(int argc, char *argv[])
 {
-	t_input		input;
-	ssize_t		ret;
-	
-	while (1)
+	t_shell		sh;
+	int			ret;
+	char		*prompt;
+
+	bzero(&sh, sizeof(t_shell));
+	sh.info.argc = argc;
+ 	sh.info.argv = argv;
+	if (ms_initialise(&sh) == false)
+		return (ms_free(&sh), EXIT_FAILURE);
+	while (true)
 	{
-		if (write(STDOUT_FILENO, "minishell$ ", 11) != 11)
-			return (EXITFAILURE);
-		ret = ft_readline(&input.str, &input.bufsize, STDIN_FILENO);
-		//if (ret > 0)
-		//	ret = ms_checkquotes(&input.str, &input.bufsize, STDIN_FILENO)
-		if (ret < 0)
-			return (EXITFAILURE);
+		prompt = ms_getenv("PS1", &sh.loc_env, &sh.exp_env);
+		if (prompt == NULL)
+			ms_setenv(&sh.loc_env, "PS1", MS_PS1_DEFAULT_STR);
+ms_free(&sh);
+return (0);
+		if (write(STDOUT_FILENO, sh.ps1.str, strlen(sh.ps1.str)) < 0)
+			return (ms_free(&sh), EXIT_FAILURE);
+		ret = ft_getline(&sh.cmdstr, &sh.cmdsize, STDIN_FILENO);
 		if (ret == 0)
-			return (free(input.str), EXITSUCCESS);
-		add_history(input.str);
-		if (ms_tokenise(&input) == false)
-			return (free(input.str), EXITFAILURE);
-		if (ms_expand_envs(&input) == false)
-			return (EXITFAILURE);
-		if (ms_create_ast(&input) == false)
-			return (free(input.str), EXITFAILURE);
-		if (ms_exec(&input, argc, argv, envp) == false)
-			return (free(input.str), EXITFAILURE);
+			return (printf("\nexit\n"), ms_free(&sh), EXIT_SUCCESS);
+		if (ret < 0 || ms_exec(&sh) == false)
+			return (ms_free(&sh), EXIT_FAILURE);
 	}
-	free(input.str);
-	return (EXITSUCCESS);
+	ms_free(&sh);
+	return (EXIT_SUCCESS);
 }
 

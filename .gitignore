@@ -1,3 +1,9 @@
+# Project specific:
+minishell
+tags
+TAGS
+vgcore.*
+
 # Prerequisites
 *.d
 

@@ -1,41 +1,38 @@
-NAME	:= minishell
-CC      := gcc
-RM		:= rm -f
-CFLAGS	:= -g -Wall -Wextra -Werror
-LINK	:= -lreadline -lncurses
+NAME        := minishell
+CC          := cc
+BASICFLAGS  := -g -Wall -Wextra -Werror
+CFLAGS      := -c $(BASICFLAGS)
+LFLAGS      := $(BASICFLAGS) -lncurses -lreadline #-fsanitize=address
+# TODO: get rid of $(shell)
+HEADER_DIRS := $(shell find ./src -type f -regex '.*\.h' | grep -o '.*/' | grep -v 'test' | sed 's|.\/$|||' | uniq)
+INCLUDES    := $(addprefix -I, $(HEADER_DIRS))
+SRCS        := $(shell find src/ -type f -regex '.*\.c' | grep -v 'test')
+OBJS        := $(SRCS:.c=.o)
 
-# source files in ./src/
-SRC		:= $(shell find src/ -maxdepth 1 -type f -regex ".*\.c" | sort)
-# prototypes are one-file testprograms in ./prototypes/
-PROTO	:= $(shell find prototypes/ -maxdepth 1 -type f -regex ".*\.c")
-PROTOEX := $(PROTO:.c=)
-# header directory search ./
-H_DIRS	:= $(shell find -type f -regex ".*\.h" | grep -o '.*/' \
-                 | sed 's|.\/$|||' | uniq)
-INCLUDE := $(addprefix -I, $(H_DIRS))
-# library *.a files in ./lib/
-LIBS 	:= $(shell find ./lib/ -maxdepth 1 -type d | tail -n +2)
-#          suffixes basename to itself, then suffixes "*.a".
-LIBS_A	:= $(addsuffix /$(shell basename $(LIBS)).a, $(LIBS))
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $<
 
-%: %.c
-	$(CC) $(CFLAGS) $(INCLUDE) -o $@ $< $(LIBS_A) $(LINK)
+$(NAME): $(OBJS)
+	$(CC) $(LFLAGS) $(INCLUDES) -o $@ $(OBJS)
 
-$(NAME): $(SRC)
-	$(CC) $(CFLAGS) $(INCLUDE) -o $@ $(SRC) $(LIBS_A) $(LINK)
-
-$(LIBS_A): $(LIBS)
-	make all -C $(LIBS)
-
-all: $(LIBS_A) $(NAME)
+all: $(NAME)
 clean:
-	make clean -C $(LIBS)
-	$(RM) $(NAME)
-	$(RM) $(PROTOEX)
-fclean: clean
-	$(RM) $(LIB_A)
+	rm $(NAME) $(OBJS) $(LEXER) $(ENVIRON)
+fclean:
+	rm -f $(NAME) $(OBJS) $(LEXER) $(ENVIRON)
 re: fclean all
-proto: $(PROTOEX)
-prototype: proto
 
-.PHONY: all proto clean fclean re cleanlibs
+# development/testing:
+tests: $(LEXER) $(ENVIRON)
+tags:
+	ctags -R src/*
+
+LEXER := src/test/lexer
+$(LEXER): src/lexer.c src/test/lexermain.c 
+	$(CC) $(TESTFLAGS) -o $@ $< 
+
+ENVIRON := src/test/environ
+$(ENVIRON): src/environ.c src/test/environmain.c 
+	$(CC) $(TESTFLAGS) -o $@ $< 
+
+.PHONY: all clean fclean re tests tags 
