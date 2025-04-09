@@ -2,16 +2,18 @@
 [subject.pdf](https://cdn.intra.42.fr/pdf/pdf/47172/en.subject.pdf)
 #### definitions:
 - meta\_char="|&;()<>"
-- ctrl\_operator= '\n', ;, ||, &&, &, |, |&, '(', ')'
-- redirect= <, >, <<, >>, |
+- ctrl\_operator= '\n', ';', '||', '&&', '&', '|', '|&', '(', ')'
+- redirect= '<', '>', '<<', '>>', '|'
 
-#### program flow:
+####' program flow:
 `A => B | C` means token A's next token is either B or C.\
-`A = B | C` means token A is either B or C.\
+`A = B | C` means token A is either B or C.
+
 - start => cmd | assign | '('
 - cmd => arg | quote | ctrl\_operator | redirect
 - assign => arg | quote | ctrl\_operator | redirect(weird behaviour)
 - '(' => start
+
 - arg = $variable | text(non-meta\_char/non-space\_char)
 - quote = '' | "$var" | $''
 - end = '\0'

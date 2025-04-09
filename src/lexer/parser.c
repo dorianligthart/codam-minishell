@@ -4,17 +4,19 @@
 
 //local:
 #include "parser.h"
+#include "lexer.h"
 
-bool	ms_parser_init(t_parser *parser)
+bool	ms_initparser(t_parser *parser)
 {
-	printf("\nms_parser_init() not implemented!\n");
+	//fprintf(stderr, "\nms_parser_init() not implemented!\n");
 	(void)parser;
 	return (true);
 }
 
-bool	ms_parser_go(t_parser *parser, t_lexer *lexer)
+bool	ms_parse(t_parser *parser, t_lexer *lexer)
 {
-	printf("\nms_parser_go() not implemented!\n");
+	printf("[INFO] ms_parse() retrieved: lexer [\n\ttokens_len = %zu\n\ttokens_size = %zu\n\ttokens = %p\n]", lexer->tokens_len, lexer->tokens_size, lexer->tokens);
+	//fprintf(stderr, "\nms_parser() not implemented!\n");
 	(void)parser;
 	(void)lexer;
 	return (true);

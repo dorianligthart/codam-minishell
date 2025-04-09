@@ -6,7 +6,7 @@
 //utils.c
 size_t		ms_strchrlen(char *str, int c);
 uint32_t	ms_round_to_pow_2(uint32_t n);
-void		*ms_expand_array(void **old, size_t *oldsize, size_t desired);
+void		*ms_expand_array(void **old, size_t *oldsize, size_t size, size_t n);
 char		*ms_itoa(char *buffer, size_t buflen, int n);
 
 //free.c:

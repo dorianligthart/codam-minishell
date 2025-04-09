@@ -25,6 +25,8 @@ CO_ = control operator = \n && || ; & | |& ( )
 
 #define MS_METACHARS "|&;()<>"
 
+//control tokens: [\n, &&, ||, ;, &, |, |&]
+//redirect tokens: [<, >, <<, >>]
 enum e_tokenid
 {
 	TOKEN_UNDEF = 0,
@@ -68,7 +70,7 @@ typedef struct t_lexer
 	uint8_t	table[128 * 128];
 } t_lexer;
 
-bool	ms_lexer_init(t_lexer *lexer);
-bool	ms_lexer_go(t_lexer *l, char *input);
+bool	ms_initlexer(t_lexer *lexer);
+bool	ms_lex(t_lexer *l, char *input);
 
 #endif //#ifndef MS_LEXER_H

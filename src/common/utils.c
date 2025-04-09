@@ -14,14 +14,14 @@ size_t	ms_strchrlen(char *str, int c)
 	return (ret);
 }
 
-void	*ms_expand_array(void **old, size_t *oldsize, size_t desired)
+void	*ms_expand_array(void **old, size_t *oldsize, size_t size, size_t n)
 {
 	void *new;
 
-	new = malloc(desired);
+	new = malloc(n * size);
 	if (old != NULL && new != NULL)
-		memcpy(new, old, *oldsize);
-	*oldsize = desired;
+		memcpy(new, old, *oldsize * size);
+	*oldsize = n;
 	*old = new;
 	return (new);
 }

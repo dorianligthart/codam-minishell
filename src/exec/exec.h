@@ -8,7 +8,7 @@ enum e_std_fd
 	STDERR,
 };
 
-bool	ms_exec_init(struct t_shell *sh);
-bool	ms_exec_go(struct t_shell *sh);
+bool	ms_initexec(struct t_shell *sh);
+bool	ms_exec(struct t_shell *sh);
 
 #endif //#ifndef MS_EXEC_H

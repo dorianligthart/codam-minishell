@@ -84,13 +84,13 @@ static bool	set_token(char *str, size_t *i, t_lexer *l, size_t current)
 {
 	if (l->table[str[*i] * 128 + str[*i + 1]] != 0)
 	{
-		l->tokens[current].id = l->table[str[0] * 128 + str[1]];
+		l->tokens[current].id = l->table[str[*i] * 128 + str[*i + 1]];
 		l->tokens[current].start = (*i)++;
 		l->tokens[current].end = (*i)++;
 	}
-	else if (l->table[str[0] * 128] != 0)
+	else if (l->table[str[*i] * 128] != 0)
 	{
-		l->tokens[current].id = l->table[str[0] * 128];
+		l->tokens[current].id = l->table[str[*i] * 128];
 		l->tokens[current].start = *i;
 		l->tokens[current].end = (*i)++;
 	}
@@ -100,14 +100,11 @@ static bool	set_token(char *str, size_t *i, t_lexer *l, size_t current)
 }
 
 //static_assert(TOKEN_COUNT == 22, "update/add tokens in prepare_table()");
-bool	ms_lexer_init(t_lexer *l)
+bool	ms_initlexer(t_lexer *l)
 {
-	if (ms_expand_array((void **)&l->tokens,
-	                     (void *)&l->tokens_size,
-	                     MS_TOKEN_SIZE * sizeof(t_token)) == false)
-	{
+	if (ms_expand_array((void **)&l->tokens, (void *)&l->tokens_size,
+	                     sizeof(t_token), MS_TOKEN_SIZE) == false)
 		return (false);
-	}
 	memset(&l->table, 0, 128 * 128);
 	l->table['\n' * 128] = TOKEN_NL;
 	l->table[';'  * 128] = TOKEN_END;
@@ -133,7 +130,7 @@ bool	ms_lexer_init(t_lexer *l)
 	return (true);
 }
 
-bool	ms_lexer_go(t_lexer *l, char *input)
+bool	ms_lex(t_lexer *l, char *input)
 {
 	size_t	current;
 	size_t	i;
@@ -145,9 +142,11 @@ bool	ms_lexer_go(t_lexer *l, char *input)
 		if (current == l->tokens_size)
 			ms_expand_array((void **)&l->tokens,
 			                (void *)&l->tokens_size,
+							sizeof(t_token),
 			                l->tokens_size + MS_TOKEN_SIZE);
 		if (set_token(input, &i, l, current++) == false)
 			return (false);
+		i++;
 	}
 	return (true);
 }

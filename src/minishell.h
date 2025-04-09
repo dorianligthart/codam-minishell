@@ -18,8 +18,7 @@ typedef struct t_info
 typedef struct t_shell
 {
 	t_info		info;
-	t_environ	loc_env;
-	t_environ	exp_env;
+	t_environ	env;
 	t_prompt	ps1;
 	t_prompt	ps2;
 	char 		*cmdstr;

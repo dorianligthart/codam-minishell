@@ -10,7 +10,7 @@ typedef struct t_parser
 
 typedef struct t_lexer t_lexer;
 
-bool	ms_parser_init(t_parser *parser);
-bool	ms_parser_go(t_parser *parser, t_lexer *lexer);
+bool	ms_initparser(t_parser *parser);
+bool	ms_parse(t_parser *parser, t_lexer *lexer);
 
 #endif //#ifndef MS_PARSER_H

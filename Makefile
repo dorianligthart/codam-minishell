@@ -1,6 +1,6 @@
 NAME        := minishell
-CC          := cc
-BASICFLAGS  := -g -Wall -Wextra -Werror
+CC          := gcc
+BASICFLAGS  := -ggdb -Wall -Wextra -Werror
 CFLAGS      := -c $(BASICFLAGS)
 LFLAGS      := $(BASICFLAGS) -lncurses -lreadline #-fsanitize=address
 # TODO: get rid of $(shell)
@@ -16,6 +16,9 @@ $(NAME): $(OBJS)
 	$(CC) $(LFLAGS) $(INCLUDES) -o $@ $(OBJS)
 
 all: $(NAME)
+instant: $(SRCS)
+	$(CC) $(LFLAGS) $(INCLUDES) -o $(NAME) $(SRCS)
+	valgrind --log-file='.vgcore' --leak-check=full --show-leak-kinds=all ./minishell || cat .vgcore
 clean:
 	rm $(NAME) $(OBJS) $(LEXER) $(ENVIRON)
 fclean:

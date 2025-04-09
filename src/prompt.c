@@ -14,6 +14,7 @@
 
 bool ms_prompt_append(t_prompt *ps, char *src)
 {
+	printf("RETRIEVED:%s\n", src); //remove later
 	size_t	srclen;
 	char	*tmp;
 
@@ -22,7 +23,7 @@ bool ms_prompt_append(t_prompt *ps, char *src)
 	srclen = strlen(src);
 	if (ps->len + srclen + 1 < ps->size)
 	{
-		ps->size = ms_round_to_pow_2(ps->len + srclen + 1);
+		ps->size = ps->size * 2;
 		tmp = malloc(ps->size);
 		if (tmp == NULL)
 			return false;
@@ -36,11 +37,15 @@ bool ms_prompt_append(t_prompt *ps, char *src)
 	return (true);
 }
 
+#ifndef MS_PROMPTBUFSIZE
+#define MS_PROMPTBUFSIZE 128
+#endif
+
 //default PS1='\s-\v\$ '
 //PS1='[\u@\h \W]\$ '
 static bool	ms_prompt_which(char c, t_prompt *p, int current_command, char *argv0)
 {
-	char buf[64];
+	char buf[MS_PROMPTBUFSIZE];
 
 	if (c == 'a')
 		return (ms_prompt_append(p, "\a")); //A bell character.
@@ -50,10 +55,10 @@ static bool	ms_prompt_which(char c, t_prompt *p, int current_command, char *argv
 		return (ms_prompt_append(p, "date-unimplemented")); //format}
 	if (c == 'e')
 		return (ms_prompt_append(p, "\e")); //escape character.
-	if (c == 'h' && (gethostname(buf, 64) < 0
+	if (c == 'h' && (gethostname(buf, MS_PROMPTBUFSIZE) < 0
 		|| (buf[strchrnul(buf, '.') - buf] = 0 && !ms_prompt_append(p, buf)))) //The full hostname, up to the first ‘.’.
 		return (printf("gethostname() or ms_prompt_append() failed\n"), false);
-	if (c == 'H' && (gethostname(buf, 64) < 0 || !ms_prompt_append(p, buf))) //The full hostname.
+	if (c == 'H' && (gethostname(buf, MS_PROMPTBUFSIZE) < 0 || !ms_prompt_append(p, buf))) //The full hostname.
 		return (printf("gethostname() or ms_prompt_append() failed\n"), false);
 	if (c == 'j')
 		return (ms_prompt_append(p, "JOBNO-unimplemented")); //The number of jobs currently managed by the shell.
@@ -85,9 +90,9 @@ static bool	ms_prompt_which(char c, t_prompt *p, int current_command, char *argv
 		return (ms_prompt_append(p, getcwd(NULL, 0))); //The value of the PWD shell variable ($PWD), with $HOME abbreviated with a tilde (uses the $PROMPT_DIRTRIM variable).
 	if (c == 'W')
 		return (ms_prompt_append(p, getcwd(NULL, 0))); //The basename of $PWD, with $HOME abbreviated with a tilde.
-	if (c == '!' && (!ms_itoa(buf, 64, where_history()) || !ms_prompt_append(p, buf))) //The history number of this command.
+	if (c == '!' && (!ms_itoa(buf, MS_PROMPTBUFSIZE, where_history()) || !ms_prompt_append(p, buf))) //The history number of this command.
 		return (printf("\\!: ms_itoa() or ms_prompt_append() failed\n"), false);
-	if (c == '#' && (!ms_itoa(buf, 64, current_command) || !ms_prompt_append(p, buf))) //The command number of this command.
+	if (c == '#' && (!ms_itoa(buf, MS_PROMPTBUFSIZE, current_command) || !ms_prompt_append(p, buf))) //The command number of this command.
 		return (printf("\\#: ms_itoa() or ms_prompt_append() failed\n"), false);
 	if (c == '$')
 		return (ms_prompt_append(p, (char *)((geteuid() == 0) * (size_t)"#" + (geteuid() != 0) * (size_t)"$"))); //If the effective uid is 0, #, otherwise $.
@@ -105,12 +110,15 @@ static bool	ms_prompt_which(char c, t_prompt *p, int current_command, char *argv
 //returns false on error;
 bool	ms_prompt_update(t_info *info, t_prompt *p, char *new)
 {
-	char	buf[64];
+	p->str = new;
+	p->len = strlen(new);
+	return (true);
+	char	buf[MS_PROMPTBUFSIZE];
 	size_t	i;
-	size_t	tmp;
+	size_t	sublen;
 
 	if (new == NULL)
-		new = MS_PS1_DEFAULT_STR;
+		return (false);
 	i = 0;
 	while (new[i])	
 	{
@@ -118,36 +126,20 @@ bool	ms_prompt_update(t_info *info, t_prompt *p, char *new)
 		{
 			if (strchr("adDehHjlnrstT@AuvVwW!#$\\[]", new[i]) == NULL
 				|| !ms_prompt_which(new[i++], p, info->current_command, info->argv[0]))
-				return (printf("'\\%c' not supported\n", new[i]), false);
+				return (printf("'\\%c' invalid!\n", new[i]), false);
 		}
 		else
 		{
-			tmp = (strchrnul(new + i, '\\') - new + i) % 64;
-			memcpy(buf, new + i, tmp - 1);
-			buf[tmp] = 0;
+			sublen = (strchrnul(new + i, '\\') - (new + i)) % MS_PROMPTBUFSIZE;
+			printf("sublen=%zu\n", sublen); //remove later
+			memcpy(buf, new + i, sublen - 1);
+			buf[sublen] = 0;
 			if (ms_prompt_append(p, buf) == false)
 				return (false);
-			i += tmp;
+			i += sublen;
 		}
+		break; //remove later
 	}
-	return (true);
-}
-
-bool	ms_putps1(t_info *info, t_prompt *p, char *str)
-{
-	if (str == NULL)
-		return (false);
-	if (ms_prompt_update(info, p, str) == false)
-		return (false);
-	return (true);
-}
-
-bool	ms_putps2(t_info *info, t_prompt *p, char *str)
-{
-	if (str == NULL)
-		return (false);
-	if (ms_prompt_update(info, p, str) == false)
-		return (false);
 	return (true);
 }
 

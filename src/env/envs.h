@@ -1,8 +1,7 @@
-//'src/envs/envs.c' is associated with this header.
 #ifndef MS_ENVIRON_H
 # define MS_ENVIRON_H
 
-// TODO: make shell support bourne variables. HOME, PATH, IFS, PS1, PS2.
+// todo: make shell support bourne variables. HOME, PATH, IFS, PS1, PS2.
 // https://www.gnu.org/software/bash/manual/html_node/Bourne-Shell-Variables.html
 // Will stay unimplemented:
 // https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
@@ -121,41 +120,55 @@ enum bash_envs
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stddef.h>
+#include <stddef.h> 
 
 //OVERVIEW:
-// two t_environ's for:
 // local variables | exported variables
-// - bash envs     | - copy extern char **environ variables from <stdio.h>
-// - user def vars | - user exported vars
-// - bourne envs   | - bourne envs 
+// - bashrc envs   | - past variables from <stdio.h>(char **environ)
+// - user def vars | 	- sh exported vars
+// - sh envs       | - user exported vars
 
 //STRUCT DEF:
-//ptr:      grows linearly. if an env gets unset the pointer will be filled with an
-//          empty string, and marked for availability
-//hashptr:  are indexes to first hits of hash algo.
-//hashptr2: are indexes to second hits of hash algo.
-//hash:     when 3rd time hit, the size of table will double.
+//ptr:    grows linearly. if an env gets unset the pointer will be filled with an
+//        empty string, and marked for availability
+//table1: are indexes to first hits of hash algo.
+//table2: are indexes to second hits of hash algo.
+//table3: are indexes to third hits of hash algo.
+//          when 4th time hit, the size of table will double.
 typedef struct t_environ
 {
-	uint32_t	ptrsize;
+	size_t		size;
 	char		**ptr;
 	bool		*ismalloced;
-
-	uint32_t	*hashptr;
-	uint32_t	*hashptr2;
-	size_t		hashsize;
+	bool		*islocal;
+	uint32_t	*table1;
+	uint32_t	*table2;
+	uint32_t	*table3;
+	uint32_t	seed;
+	size_t		tablesize;
 } t_environ;
 
 #ifndef MS_ENVSIZE
 #define MS_ENVSIZE 64
 #endif
 
-char	*ms_getenv(char *id, t_environ *loc, t_environ *exp);
-bool	ms_setenv_str(t_environ *env, char *str);
-bool	ms_setenv(t_environ *env, char *id, char *val);
-bool	ms_unsetenv(t_environ *env, char *id);
-bool	ms_env_realloc(t_environ *env, size_t newcount);
-bool	ms_env_init(t_environ *env, bool copyenviron);
+bool	ms_envrealloc(t_environ *env, size_t newsize);
+char	*ms_getenv(char *str, t_environ *env);
+bool	ms_setenv(char *str, t_environ *env, bool islocal);
+void	ms_unsetenv(char *str, t_environ *env);
 
 #endif //#ifndef MS_ENVIRON_H
+
+//OLD DATA STRUCT:
+////at start: NULL.
+////if ms_setenv(local): reallocate.
+//	uint32_t	local_size;
+//	char		**local;
+//	bool		*local_is_malloced;
+////at start: set to environ.
+////if ms_setenv(export): reallocate.
+//	uint32_t	export_size;
+//	char		**export;
+//	bool		*export_is_malloced;
+////at start: always alloced and gen table.
+////if ms_setenv() AND hashptr2 is full: regen.
