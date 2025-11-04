@@ -29,7 +29,8 @@ CO_ = control operator = \n && || ; & | |& ( )
 //redirect tokens: [<, >, <<, >>]
 enum e_tokenid
 {
-	TOKEN_UNDEF = 0,
+	TOKEN_UNDEFINED = 0,	//edge-case?
+	TOKEN_WORD,				//word (string or file, obliges IFS env)
 	TOKEN_NL,				//is `\n`
 	TOKEN_AND,				//is `&&`
 	TOKEN_OR,				//is `||`
@@ -37,12 +38,12 @@ enum e_tokenid
 	TOKEN_BG,				//is `&`
 	TOKEN_PIPE_OUT,			//is `|`
 	TOKEN_PIPE_OUT_AND_ERR,	//is `|&`
-	TOKEN_FILE_UNDEF,		//word (search in $PATH)
 	TOKEN_FILE,				//starts with `./` or `/`
 	TOKEN_SQUOTE,			//starts with `'` ends with `'`
 	TOKEN_DQUOTE,			//starts with `"` ends with `"`
 	TOKEN_CQUOTE,			//starts with `$'` ends with `'`
-	TOKEN_PARAM_ASSIGN, 	//is `word=...`
+	TOKEN_PARAM_ASSIGN, 	//is `word=`
+	TOKEN_PARAM_APPEND, 	//is `word+=`
 	TOKEN_PARAM_EXPAN,		//is `$word`
 	TOKEN_REDIRECT_IN,		//is `<`
 	TOKEN_REDIRECT_OUT,		//is `>`
@@ -57,7 +58,7 @@ enum e_tokenid
 typedef struct t_token
 {
 	uint8_t	id;
-	size_t	start;
+	size_t	begin;
 	size_t	end;
 } t_token;
 
@@ -65,12 +66,13 @@ typedef struct t_token
 typedef struct t_lexer
 {
 	t_token	*tokens;
-	size_t	tokens_len;
-	size_t	tokens_size;
+	size_t	count;
+	size_t	size;
 	uint8_t	table[128 * 128];
+	char	*ifs;
 } t_lexer;
 
 bool	ms_initlexer(t_lexer *lexer);
-bool	ms_lex(t_lexer *l, char *input);
+bool	ms_lexer(t_lexer *l, char *input);
 
 #endif //#ifndef MS_LEXER_H

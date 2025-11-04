@@ -1,18 +1,25 @@
+# LONGTERM:
+- add shell options [help, version, rc, rc-file]
+- invert boolean function returns, false means success, true means error.
+
+### Extra features:
+- actual error handling:
+  1. script-mode: `file:linenumber:column: Error message`
+  2. interactive-mode: `linenumber:column: Error message` 
+- simplified keywords: [declare, if, else, else if, while, do while, for, case,
+  export, unset, env,]
 
 ### PROMPT
-- move pointer +4 so 'PS1=' won't be visible
-- allow options like bash.
+- implement \\
+- make decision on rc
+- maybe make like bash?
 ### ENV
-- nothing! all done!
+- n/a
 ### LEXER
-- test and fix bugs!!
+- n/a
 ### PARSER
 - copy oldstuff/prototypes/cmd\_search.c but make it hash!
-o
 ### EXEC
 - make function that executes commands, list of commands, or assignment.
-- create a tree
+- create an AStree ?
 
-# LONG TERM:
-- add shell options
-- add simple rc file functionality.

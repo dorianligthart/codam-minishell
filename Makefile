@@ -1,41 +1,38 @@
 NAME        := minishell
+MAIN        := src/main.o
 CC          := gcc
-BASICFLAGS  := -ggdb -Wall -Wextra -Werror
+#TODO: build with -Wunused-parameter/variable
+BASICFLAGS  := -ggdb -Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-variable
 CFLAGS      := -c $(BASICFLAGS)
-LFLAGS      := $(BASICFLAGS) -lncurses -lreadline #-fsanitize=address
+LFLAGS      := $(BASICFLAGS) -lncurses -lreadline
 # TODO: get rid of $(shell)
-HEADER_DIRS := $(shell find ./src -type f -regex '.*\.h' | grep -o '.*/' | grep -v 'test' | sed 's|.\/$|||' | uniq)
+HEADER_DIRS := $(shell find ./src -type f -regex '.*\.h' | grep -o '.*/' | grep -v '/.*\.h' | sort  | uniq)
 INCLUDES    := $(addprefix -I, $(HEADER_DIRS))
-SRCS        := $(shell find src/ -type f -regex '.*\.c' | grep -v 'test')
+SRCS        := $(shell find src/ -type f -regex '.*\.c' | grep -v 'main')
 OBJS        := $(SRCS:.c=.o)
+
+# development/testing:
+TEST_SRCS := $(shell find test -type f -regex '.*\.c')
+TEST_BINS := $(TEST_SRCS:.c=.out)
+test/%: $(OBJS) test/%.c  
+	$(CC) $(BASICFLAGS) $(INCLUDES) -o $@ $^ $(LFLAGS)
+tests: $(TEST_BINS)
+tags:
+	ctags -R src/*
+
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $<
 
-$(NAME): $(OBJS)
-	$(CC) $(LFLAGS) $(INCLUDES) -o $@ $(OBJS)
+$(NAME): $(OBJS) $(MAIN)
+	$(CC) $(INCLUDES) $(LFLAGS) -o $@ $^  
 
-all: $(NAME)
-instant: $(SRCS)
-	$(CC) $(LFLAGS) $(INCLUDES) -o $(NAME) $(SRCS)
-	valgrind --log-file='.vgcore' --leak-check=full --show-leak-kinds=all ./minishell || cat .vgcore
+all: $(NAME) $(TEST_BINS)
+	./minishell
 clean:
-	rm $(NAME) $(OBJS) $(LEXER) $(ENVIRON)
-fclean:
-	rm -f $(NAME) $(OBJS) $(LEXER) $(ENVIRON)
+	rm -f $(MAIN) $(OBJS) $(TEST_BINS)
+fclean: clean
+	rm -f $(NAME)
 re: fclean all
 
-# development/testing:
-tests: $(LEXER) $(ENVIRON)
-tags:
-	ctags -R src/*
-
-LEXER := src/test/lexer
-$(LEXER): src/lexer.c src/test/lexermain.c 
-	$(CC) $(TESTFLAGS) -o $@ $< 
-
-ENVIRON := src/test/environ
-$(ENVIRON): src/environ.c src/test/environmain.c 
-	$(CC) $(TESTFLAGS) -o $@ $< 
-
-.PHONY: all clean fclean re tests tags 
+.PHONY: all clean fclean re instant test tags 

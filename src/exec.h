@@ -9,6 +9,6 @@ enum e_std_fd
 };
 
 bool	ms_initexec(struct t_shell *sh);
-bool	ms_exec(struct t_shell *sh);
+bool	ms_exec(struct t_parser *pa, t_info *info);
 
 #endif //#ifndef MS_EXEC_H

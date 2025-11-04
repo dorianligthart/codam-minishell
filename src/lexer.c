@@ -57,54 +57,77 @@ bool	ms_tokenise(t_input *input)
 */
 
 /////////////////////////////////////////////////////////////////
-/// old code ^^		new code vv
+/// old ugly code ^^		new spicy code vv                 ///
 /////////////////////////////////////////////////////////////////
-
-//#include <stdio.h>
-//#include <unistd.h>
-//#include <stdbool.h>
-//#include <ctype.h> //isalnum()
 
 #include <stdlib.h> //malloc()
 #include <string.h> //memset() bzero()
 #include "lexer.h"
-#include "utils.h"
-#include "minishell.h"
+#include "utils.h" //ms_strchrlen()
 
-static bool	choose_wordtoken(char *str, size_t *i, t_lexer *l, size_t current)
-{
-	(void)str;
-	(void)i;
-	(void)l;
-	(void)current;
-	return (true);
-}
-
-static bool	set_token(char *str, size_t *i, t_lexer *l, size_t current)
+static void	set_token(char *str, size_t *i, t_lexer *l, size_t current)
 {
 	if (l->table[str[*i] * 128 + str[*i + 1]] != 0)
 	{
 		l->tokens[current].id = l->table[str[*i] * 128 + str[*i + 1]];
-		l->tokens[current].start = (*i)++;
+		l->tokens[current].begin = (*i)++;
 		l->tokens[current].end = (*i)++;
 	}
 	else if (l->table[str[*i] * 128] != 0)
 	{
 		l->tokens[current].id = l->table[str[*i] * 128];
-		l->tokens[current].start = *i;
+		l->tokens[current].begin = *i;
 		l->tokens[current].end = (*i)++;
 	}
+	else if (ms_strchrlen(str + *i, '=')) //assignment
+	{
+		l->tokens[current].id = TOKEN_PARAM_ASSIGN;
+		l->tokens[current].begin = *i;
+		l->tokens[current].end = (*i += ms_strchrlen(str + *i, '='));
+	}
+	else if (current != 0 && l->tokens[current - 1].id == TOKEN_PARAM_ASSIGN)
+	{
+		l->tokens[current].id = TOKEN_WORD;
+		l->tokens[current].begin = *i;
+		while (str[*i] && !strchr(l->ifs, str[*i]) && !strchr(MS_METACHARS, str[*i]))
+			++(*i);
+		l->tokens[current].end = *i;
+		while (str[*i] && strchr(l->ifs, str[*i]))
+			++(*i);
+	}
 	else
-		return (choose_wordtoken(str, i, l, current));
+	{
+		while (str[*i] && strchr(l->ifs, str[*i]))
+			++(*i);
+		l->tokens[current].id = TOKEN_FILE;
+		l->tokens[current].begin = *i;
+		while (str[*i] && !strchr(l->ifs, str[*i]) && !strchr(MS_METACHARS, str[*i]))
+			++(*i);
+		l->tokens[current].end = *i;
+		while (str[*i] && strchr(l->ifs, str[*i]))
+			++(*i);
+	}
+}
+
+bool	ms_lexer(t_lexer *l, char *input)
+{
+	size_t	current;
+	size_t	i;
+
+	current = 0;
+	i = 0;
+	while (input[i] != '\0')
+	{
+		if (current == l->size && ms_expand_array((void **)&l->tokens,
+		        (void *)&l->size, l->size + MS_TOKEN_SIZE) == false)
+			return (false);
+		set_token(input, &i, l, current++);
+	}
 	return (true);
 }
 
-//static_assert(TOKEN_COUNT == 22, "update/add tokens in prepare_table()");
 bool	ms_initlexer(t_lexer *l)
 {
-	if (ms_expand_array((void **)&l->tokens, (void *)&l->tokens_size,
-	                     sizeof(t_token), MS_TOKEN_SIZE) == false)
-		return (false);
 	memset(&l->table, 0, 128 * 128);
 	l->table['\n' * 128] = TOKEN_NL;
 	l->table[';'  * 128] = TOKEN_END;
@@ -116,38 +139,17 @@ bool	ms_initlexer(t_lexer *l)
 	l->table['*'  * 128] = TOKEN_FILENAME_EXPAN;
 	l->table['\'' * 128] = TOKEN_SQUOTE; 
 	l->table['"'  * 128] = TOKEN_DQUOTE;
-	l->table['='  * 128] = TOKEN_PARAM_ASSIGN;
-	l->table['$'  * 128] = TOKEN_PARAM_EXPAN;
 	l->table['&'  * 128 + '&'] = TOKEN_AND;
 	l->table['|'  * 128 + '|'] = TOKEN_OR;
 	l->table['$'  * 128 + '\''] = TOKEN_CQUOTE;
 	l->table['|'  * 128 + '&'] = TOKEN_PIPE_OUT_AND_ERR;
 	l->table['<'  * 128 + '<'] = TOKEN_HERE_DOCUMENT;
 	l->table['>'  * 128 + '>'] = TOKEN_REDIRECT_APPEND;
+	l->table['+'  * 128 + '='] = TOKEN_PARAM_APPEND;
 	l->table['$'  * 128 + '?'] = TOKEN_EXITCODE;
 	l->table['$'  * 128 + '$'] = TOKEN_PID;
 	l->table['.'  * 128 + '/'] = TOKEN_FILE;
-	return (true);
-}
-
-bool	ms_lex(t_lexer *l, char *input)
-{
-	size_t	current;
-	size_t	i;
-
-	current = 0;
-	i = 0;
-	while (input[i] != '\0')
-	{
-		if (current == l->tokens_size)
-			ms_expand_array((void **)&l->tokens,
-			                (void *)&l->tokens_size,
-							sizeof(t_token),
-			                l->tokens_size + MS_TOKEN_SIZE);
-		if (set_token(input, &i, l, current++) == false)
-			return (false);
-		i++;
-	}
-	return (true);
+	return (ms_expand_array((void **)&l->tokens, (void *)&l->size,
+	                        MS_TOKEN_SIZE));
 }
 

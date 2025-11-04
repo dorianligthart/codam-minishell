@@ -1,4 +1,3 @@
-### PS1 variable
 - `\a` : A bell character.
 - `\d` : The date, in "Weekday Month Date" format (e.g., "Tue May 26").
 - `\D{format}` : The format is passed to strftime(3) and the result is inserted into the prompt string; an empty format results in a locale-specific time representation. The braces are required.

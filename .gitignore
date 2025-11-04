@@ -1,8 +1,15 @@
 # Project specific:
+src/getline/tests/readstdin
+src/tests/lexer
 minishell
+
+#valgrind/ctags/vim:
+vgcore.*
+.vgcore
 tags
 TAGS
-vgcore.*
+*.swp
+*.swo
 
 # Prerequisites
 *.d

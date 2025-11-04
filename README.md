@@ -1,5 +1,6 @@
 # codam-minishell
 [subject.pdf](https://cdn.intra.42.fr/pdf/pdf/47172/en.subject.pdf)
+
 #### definitions:
 - meta\_char="|&;()<>"
 - ctrl\_operator= '\n', ';', '||', '&&', '&', '|', '|&', '(', ')'
@@ -23,7 +24,7 @@
 - no history(3) syntax. 
 - limited quoting, doesn't handle locale specific translation.
 - no background/list/compound commands.
-- no coprocesses GNU Parallel.
+- no [coprocesses GNU parallel](https://www.gnu.org/software/bash/manual/html_node/Coprocesses.html).
 - no brace, tilde, arithmetic, filename expansion.
 - no command/process substitution. 
 - no keywords like 'if'.
@@ -37,12 +38,3 @@
 - interactive mode.
 - syntax: [_command_, <, >, <<, >>, "$...", $?, |]
 - builtins = [echo [-n], cd, pwd, export, unset, env, exit]
-
-### todo, Minishell's extra features:
-- actual error handling:
-  1. script-mode: `file:linenumber:column: Error message`
-  2. interactive-mode: `linenumber:column: Error message` 
-- simplified keywords: [declare, if, else, else if, while, do while, for, case,
-  export, unset, env,]
-- ANSI-C string: `'\n\t'` becomes a newline and a tab (still a string literal).
-- 

@@ -4,7 +4,7 @@ CC       := gcc
 SRC		 := $(shell find -maxdepth 1 -type f -regex ".*\.c")
 OBJ		 := $(SRC:.c=.o)
 TESTS    := $(shell find tests/ -maxdepth 1 -type f -regex ".*\.c")
-TESTS_EX := $(TESTS:.c=)
+TESTS_EX := $(TESTS:.c=.out)
 
 %: %.c
 	$(CC) $(CFLAGS) -o $@ $< $(NAME)

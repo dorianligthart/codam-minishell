@@ -123,7 +123,7 @@ ssize_t ft_getdelim(char **lineptr, size_t *bufsize, int delim, int fd)
 	return (v.split - *lineptr + v.offset);
 }
 
-//same as ft_getdelim() but reads from end of lineptr instead of overwriting
+//same as ft_getdelim() but reads on the end of lineptr instead of from start
 ssize_t	ft_readdelim(char **lineptr, size_t *bufsize, int delim, int fd)
 {
 	static char		*saved[FD_SETSIZE] = {0};

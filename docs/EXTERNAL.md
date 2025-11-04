@@ -1,4 +1,4 @@
-### list of allowed C functions:
+### list of allowed C functions in 42's Minishell:
 ```c
 // readline :
 char    *readline (const char *prompt); 

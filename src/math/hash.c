@@ -69,7 +69,8 @@ uint32_t ms_hash(const void *input, size_t length, uint32_t seed)
 //	for (size_t i = 0; data[i] != NULL; ++i)
 //	{
 //		uint32_t	hash = ms_hash(data[i], ms_strclen(data[i], '='), 0) % 256;
-//		if (check[hash] != NULL) printf("%d='%s' and '%s'\n", hash, check[hash], data[i]);
+//		if (check[hash] != NULL)
+//			printf("hash %d: '%s' and '%s' clash!\n", hash, check[hash], data[i]);
 //		check[hash] = data[i];
 //	}
 //	return (0);

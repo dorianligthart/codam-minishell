@@ -1,24 +1,18 @@
 #ifndef MINISHELL_H
 #define MINISHELL_H
 
-#include <stddef.h>
-#include "envs.h"
-#include "prompt.h"
-#include "lexer.h"
-#include "parser.h"
+#include <stddef.h> //size_t
 
-typedef struct t_info
-{
-	char		**argv;
-	int			argc;
-	const char	*empty_string;
-	int			current_command;
-} t_info;
+#include "argv.h" //t_info
+#include "environ.h" //t_environ
+#include "prompt.h" //t_prompt
+#include "lexer.h" //t_lexer
+#include "parser.h" //t_parser
 
 typedef struct t_shell
 {
 	t_info		info;
-	t_environ	env;
+	t_environ	envs;
 	t_prompt	ps1;
 	t_prompt	ps2;
 	char 		*cmdstr;
@@ -26,5 +20,7 @@ typedef struct t_shell
 	t_lexer		lexer;
 	t_parser	parser;
 } t_shell;
+
+int	ms_getinput(t_shell *sh);
 
 #endif //#define MINISHELL_H

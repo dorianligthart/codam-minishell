@@ -1,3 +1,6 @@
+#ifndef MS_VECTORS_H_
+#define MS_VECTORS_H_
+
 #include <stdint.h>
 
 typedef struct t_vec2_ui32
@@ -41,3 +44,5 @@ typedef struct t_vec4_ui64
 	uint64_t	c;
 	uint32_t	d;
 } t_vec4_ui64;
+
+#endif

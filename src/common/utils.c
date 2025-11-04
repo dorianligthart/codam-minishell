@@ -4,6 +4,29 @@
 #include <string.h>
 #include <limits.h>
 
+//assuming sizeof(p) == n * size
+void *ms_generic_memset(void *p, void *val, size_t size, size_t n)
+{
+	size_t	i;
+
+	i = -1;
+	while (++i < n)
+		memcpy(((char *)p + (i * size)), val, size);
+	return (p);
+}
+
+//returns -1 if delims wasn't found.
+size_t	ms_strchrslen(char *str, const char *delims)
+{
+	size_t	y;
+
+	y = -1;
+	while (str[++y])
+		if (strchr(delims, str[y]) != NULL)
+			return (y);
+	return (-1);
+}
+
 size_t	ms_strchrlen(char *str, int c)
 {
 	size_t	ret;
@@ -14,16 +37,21 @@ size_t	ms_strchrlen(char *str, int c)
 	return (ret);
 }
 
-void	*ms_expand_array(void **old, size_t *oldsize, size_t size, size_t n)
+void	*ms_expand_array(void **src, size_t *srcsize, size_t newsize)
 {
-	void *new;
+	printf("about to malloc(%zu * %zu), old size=%zu\n", newsize, sizeof(**src), *srcsize);
+	void *dst;
 
-	new = malloc(n * size);
-	if (old != NULL && new != NULL)
-		memcpy(new, old, *oldsize * size);
-	*oldsize = n;
-	*old = new;
-	return (new);
+	dst = malloc(newsize * sizeof(**src));
+	if (src != NULL && dst != NULL)
+	{
+		memcpy(dst, *src, *srcsize * sizeof(**src));
+		memset(dst + *srcsize, '\0', newsize - *srcsize);
+		free(*src);
+	}
+	*srcsize = newsize;
+	*src = dst;
+	return (dst);
 }
 
 size_t	ms_wordlen(char *str)
@@ -40,23 +68,6 @@ size_t	ms_wordlen(char *str)
 		i++;
 	}
 	return (i);
-}
-
-//returns -1 if delims wasn't found.
-size_t	len_until_delims(char *str, const char *delims)
-{
-	size_t	x;
-	size_t	y;
-
-	y = -1;
-	while (str[++y])
-	{
-		x = -1;
-		while (delims[++x])
-			if (str[y] == delims[x])
-				return (y);
-	}
-	return (-1);
 }
 
 uint32_t	ms_round_to_pow_2(uint32_t n)
@@ -87,27 +98,30 @@ static int	intlen(int n, int base)
 }
 
 //reallocs if necessary;
-char	*ms_itoa(char *buffer, size_t buflen, int n)
+bool	ms_itoa(char **buf, size_t *bufsize, size_t offset, int integer)
 {
-	size_t	index;
-	long	n_long;
+	size_t	len;
+	long	longint;
 
-	n_long = (long)n;
-	if (n < 0)
-		n_long *= -1;
-	index = intlen(n, 10);
-	if (buflen < index)
-		buffer = (char *)malloc((index + 1) * sizeof(char));
-	if (!buffer)
-		return (NULL);
-	buffer[index] = 0;
-	while (index--)
+	longint = (long)integer;
+	if (integer < 0)
+		longint *= -1;
+	len = intlen(integer, 10);
+	if (*bufsize < len + offset)
 	{
-		buffer[index] = (n_long % 10) + '0';
-		n_long = n_long / 10;
+		free(*buf);
+		*buf = (char *)malloc((len + offset + 1) * sizeof(char));
+		if (!*buf)
+			return (NULL);
 	}
-	if (n < 0)
-		buffer[0] = '-';
-	return (buffer);
+	(*buf)[len + offset] = 0;
+	while (len--)
+	{
+		(*buf)[offset + len] = (longint % 10) + '0';
+		longint = longint / 10;
+	}
+	if (integer < 0)
+		(*buf)[offset] = '-';
+	return (*buf);
 }
 

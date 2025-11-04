@@ -1,20 +1,25 @@
 //standard
-#include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <readline/history.h>
+
+//home dir/user name:
+#include <sys/types.h>
+#include <pwd.h>
+//struct passwd	*pw = getpwuid(getuid());
 
 //local
 #include "minishell.h"
-#include "envs.h"
+#include "environ.h"
 #include "prompt.h"
 #include "utils.h"
 
 bool ms_prompt_append(t_prompt *ps, char *src)
 {
-	printf("RETRIEVED:%s\n", src); //remove later
+	printf("[RETRIEVED:%s]\n", src); //remove later
 	size_t	srclen;
 	char	*tmp;
 
@@ -26,7 +31,7 @@ bool ms_prompt_append(t_prompt *ps, char *src)
 		ps->size = ps->size * 2;
 		tmp = malloc(ps->size);
 		if (tmp == NULL)
-			return false;
+			return (false);
 		memcpy(tmp, ps->str, ps->len);
 		free(ps->str);
 		ps->str = tmp;
@@ -43,7 +48,7 @@ bool ms_prompt_append(t_prompt *ps, char *src)
 
 //default PS1='\s-\v\$ '
 //PS1='[\u@\h \W]\$ '
-static bool	ms_prompt_which(char c, t_prompt *p, int current_command, char *argv0)
+static bool	ms_prompt_which(char c, t_prompt *p, t_info *info)
 {
 	char buf[MS_PROMPTBUFSIZE];
 
@@ -71,7 +76,7 @@ static bool	ms_prompt_which(char c, t_prompt *p, int current_command, char *argv
 	if (c == 'r')
 		return (ms_prompt_append(p, "\r")); //A carriage return.
 	if (c == 's')
-		return (ms_prompt_append(p, argv0)); //The name of the shell, the basename of $0 (the portion following the final slash).
+		return (ms_prompt_append(p, info->program_name)); //The name of the shell, the basename of $0 (the portion following the final slash).
 	if (c == 't')
 		return (ms_prompt_append(p, "24:MM:SS-unimplemented")); //The time, in 24-hour HH:MM:SS format.
 	if (c == 'T')
@@ -90,9 +95,9 @@ static bool	ms_prompt_which(char c, t_prompt *p, int current_command, char *argv
 		return (ms_prompt_append(p, getcwd(NULL, 0))); //The value of the PWD shell variable ($PWD), with $HOME abbreviated with a tilde (uses the $PROMPT_DIRTRIM variable).
 	if (c == 'W')
 		return (ms_prompt_append(p, getcwd(NULL, 0))); //The basename of $PWD, with $HOME abbreviated with a tilde.
-	if (c == '!' && (!ms_itoa(buf, MS_PROMPTBUFSIZE, where_history()) || !ms_prompt_append(p, buf))) //The history number of this command.
+	if (c == '!' && (!ms_itoa(&p->str, &p->size, strlen(p->str), where_history()))) //The history number of this command.
 		return (printf("\\!: ms_itoa() or ms_prompt_append() failed\n"), false);
-	if (c == '#' && (!ms_itoa(buf, MS_PROMPTBUFSIZE, current_command) || !ms_prompt_append(p, buf))) //The command number of this command.
+	if (c == '#' && (!ms_itoa(&p->str, &p->size, strlen(p->str), info->input_count))) //The command number of this command.
 		return (printf("\\#: ms_itoa() or ms_prompt_append() failed\n"), false);
 	if (c == '$')
 		return (ms_prompt_append(p, (char *)((geteuid() == 0) * (size_t)"#" + (geteuid() != 0) * (size_t)"$"))); //If the effective uid is 0, #, otherwise $.
@@ -125,7 +130,7 @@ bool	ms_prompt_update(t_info *info, t_prompt *p, char *new)
 		if (new[i] == '\\' && ++i)
 		{
 			if (strchr("adDehHjlnrstT@AuvVwW!#$\\[]", new[i]) == NULL
-				|| !ms_prompt_which(new[i++], p, info->current_command, info->argv[0]))
+				|| !ms_prompt_which(new[i++], p, info))
 				return (printf("'\\%c' invalid!\n", new[i]), false);
 		}
 		else

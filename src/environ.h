@@ -1,10 +1,12 @@
-#ifndef MS_ENVIRON_H
-# define MS_ENVIRON_H
+#ifndef ENVIRON_H
+# define ENVIRON_H
 
-// todo: make shell support bourne variables. HOME, PATH, IFS, PS1, PS2.
 // https://www.gnu.org/software/bash/manual/html_node/Bourne-Shell-Variables.html
-// Will stay unimplemented:
+// Bourne shell vars are implemented.
+//
 // https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
+// Will stay unimplemented because what the actual fuck, there are too many and
+// some are garbage.
 enum bash_envs
 {
 	ENV_CDPATH,
@@ -118,57 +120,52 @@ enum bash_envs
 	ENV_COUNT, //last
 };
 
+//OVERVIEW:
+// local variables | exported variables
+// - bashrc envs   | - past variables from <stdio.h>(char **environ)
+// - user def vars | - exported shell vars passed via argv or .rcfile
+// - shell envs    | - current 'exported' vars
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h> 
 
-//OVERVIEW:
-// local variables | exported variables
-// - bashrc envs   | - past variables from <stdio.h>(char **environ)
-// - user def vars | 	- sh exported vars
-// - sh envs       | - user exported vars
-
-//STRUCT DEF:
-//ptr:    grows linearly. if an env gets unset the pointer will be filled with an
-//        empty string, and marked for availability
-//table1: are indexes to first hits of hash algo.
-//table2: are indexes to second hits of hash algo.
-//table3: are indexes to third hits of hash algo.
-//          when 4th time hit, the size of table will double.
-typedef struct t_environ
-{
-	size_t		size;
-	char		**ptr;
-	bool		*ismalloced;
-	bool		*islocal;
-	uint32_t	*table1;
-	uint32_t	*table2;
-	uint32_t	*table3;
-	uint32_t	seed;
-	size_t		tablesize;
-} t_environ;
-
+//start size of (or multiplicate of) env->envp.
 #ifndef MS_ENVSIZE
 #define MS_ENVSIZE 64
 #endif
 
-bool	ms_envrealloc(t_environ *env, size_t newsize);
-char	*ms_getenv(char *str, t_environ *env);
-bool	ms_setenv(char *str, t_environ *env, bool islocal);
-void	ms_unsetenv(char *str, t_environ *env);
+#ifndef MS_HASH_THRESHOLD
+#define MS_HASH_THRESHOLD 6
+#endif
 
-#endif //#ifndef MS_ENVIRON_H
+//attributes seperate from envp because child processes.
+typedef struct t_variable
+{
+	char		**str;
+	size_t		*strsize;
+	bool		islocal;
+	struct t_variable *next; //possible duplicate hit by hash
+} t_variable;
 
-//OLD DATA STRUCT:
-////at start: NULL.
-////if ms_setenv(local): reallocate.
-//	uint32_t	local_size;
-//	char		**local;
-//	bool		*local_is_malloced;
-////at start: set to environ.
-////if ms_setenv(export): reallocate.
-//	uint32_t	export_size;
-//	char		**export;
-//	bool		*export_is_malloced;
-////at start: always alloced and gen table.
-////if ms_setenv() AND hashptr2 is full: regen.
+typedef struct t_environ
+{
+	uint32_t	size;
+	char		**envp;	//is prepared to pass to execve(). NULL terminated.
+	t_variable	*vars; //2 times as big as ARRAY_LEN(envp).
+	uint32_t	seed; //after duplicate hit of MS_HASH_THRESHOLD
+	uint32_t	lowest_free; //index to the first free char * in envp.
+							 //NOTE: eq to `size` if there are none available.
+} t_environ;
+
+//	src/environ.c
+//bool	ms_setenv_bourne(t_environ *env);
+bool	ms_initenv(t_environ *env);
+
+//	src/env-get-set-unset.c:
+t_variable	*ms_getenv(char *id, t_environ *e);
+char		*ms_getenv_str(char *id, t_environ *e);
+bool		ms_setenv(char **ptr, size_t *ptrsize, t_environ *e, bool islocal);
+bool		ms_setallocedenv(char **var, size_t *varsize, t_environ *e, bool islocal);
+
+#endif //#ifndef ENVIRON_H

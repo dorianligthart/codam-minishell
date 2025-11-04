@@ -1,9 +1,12 @@
 #include "minishell.h"
+#include "environ.h"
+
 #include <stdlib.h> //free()
 #include <stdio.h>	//printf()
-#include <sys/ioctl.h> //ioctl()
+#include <stdarg.h>
 #include <unistd.h> //STDOUT_FILENO
 #include <string.h>
+#include <sys/ioctl.h> //ioctl()
 
 #ifndef C_RED
 #define C_RED "\033[0;31m"
@@ -13,6 +16,28 @@
 #define C_RESET "\033[0m"
 #endif
 
+
+void ms_log(char *fmt, ...)
+{
+	va_list	ls;
+
+	va_start(ls);
+	vprintf(fmt, ls);
+	va_end(ls);
+}
+
+void	ms_printenvs(t_environ *env)
+{
+	size_t	i;
+
+	i = 0;
+	while (i < env->size)
+	{
+		if (env->vars[i].str != NULL)
+			printf("[ENV] %zu:'%s'\n", i, *env->vars[i].str);
+		i++;
+	}
+}
 void ms_perror(t_shell *sh, int inputidx, char *msg)
 {
 	struct winsize	w;
