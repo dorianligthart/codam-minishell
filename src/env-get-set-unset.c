@@ -38,7 +38,7 @@ void	ms_unsetenv(char *id, t_environ *e)
 	
 }
 
-bool	ms_setenv_value(char *id, char *value, t_environ *e, bool islocal)
+bool	ms_setenv(char *id, char *value, t_environ *e, bool islocal)
 {
 	const size_t	valuelen = strlen(value);
 	size_t			idlen;
@@ -64,7 +64,7 @@ bool	ms_setenv_value(char *id, char *value, t_environ *e, bool islocal)
 }
 
 //islocal = whether variable is exported. see man export(1) and bash for more info.
-bool	ms_setenv(char **var, size_t *varsize, t_environ *e, bool islocal)
+bool	ms_setenv_ptr(char **var, size_t *varsize, t_environ *e, bool islocal)
 {
 	t_variable	*new;
 
@@ -82,9 +82,9 @@ bool	ms_setenv(char **var, size_t *varsize, t_environ *e, bool islocal)
 	if (new->strsize && *new->strsize > 0)
 	{
 		free(*new->str);
-		new->strsize = *varsize;
+		new->strsize = varsize;
 	}
-	new->str     = *var;
+	new->str     = var;
 	new->islocal = islocal;
 	return (true);
 }

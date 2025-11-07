@@ -165,7 +165,7 @@ bool	ms_initenv(t_environ *env);
 //	src/env-get-set-unset.c:
 t_variable	*ms_getenv(char *id, t_environ *e);
 char		*ms_getenv_str(char *id, t_environ *e);
-bool		ms_setenv(char **ptr, size_t *ptrsize, t_environ *e, bool islocal);
-bool		ms_setallocedenv(char **var, size_t *varsize, t_environ *e, bool islocal);
+bool		ms_setenv(char *id, char *value, t_environ *e, bool islocal);
+bool		ms_setenv_ptr(char **ptr, size_t *ptrsize, t_environ *e, bool islocal);
 
 #endif //#ifndef ENVIRON_H
